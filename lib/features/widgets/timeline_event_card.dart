@@ -1,104 +1,64 @@
 import 'package:flutter/material.dart';
+
+import '../../core/format.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/models/eartime_event.dart';
 
+/// One raw tracking event in the History → Events log.
 class TimelineEventCard extends StatelessWidget {
   final EarTimeEvent event;
   final String deviceName;
 
-  const TimelineEventCard({
-    super.key,
-    required this.event,
-    required this.deviceName,
-  });
+  const TimelineEventCard({super.key, required this.event, required this.deviceName});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    
-    // Formatting the timestamp to HH:MM format for display
-    final timeStr = "${event.timestamp.hour.toString().padLeft(2, '0')}:${event.timestamp.minute.toString().padLeft(2, '0')}";
+    final p = context.palette;
 
-    IconData eventIcon;
-    String eventTitle;
-    Color iconColor;
-
-    if (event.eventType == 'DEVICE_CONNECTED') {
-      eventIcon = Icons.headset_rounded;
-      eventTitle = 'Device Connected';
-      iconColor = AppColors.secondary;
-    } else if (event.eventType == 'DEVICE_DISCONNECTED') {
-      eventIcon = Icons.headset_off_rounded;
-      eventTitle = 'Device Disconnected';
-      iconColor = AppColors.onSurfaceVariant;
-    } else if (event.eventType == 'PLAYBACK_STARTED' || event.eventType == 'PLAYBACK_RESUMED') {
-      eventIcon = Icons.play_arrow_rounded;
-      eventTitle = 'Playback Started';
-      iconColor = AppColors.primary;
-    } else if (event.eventType == 'PLAYBACK_PAUSED' || event.eventType == 'PLAYBACK_STOPPED') {
-      eventIcon = Icons.pause_rounded;
-      eventTitle = 'Playback Paused';
-      iconColor = AppColors.editorialWhite;
-    } else {
-      eventIcon = Icons.event_note_rounded;
-      eventTitle = 'Event';
-      iconColor = AppColors.editorialWhite;
-    }
+    final (IconData icon, String title, Color color) = switch (event.eventType) {
+      'DEVICE_CONNECTED' => (Icons.bluetooth_connected_rounded, 'Connected', p.success),
+      'DEVICE_DISCONNECTED' => (Icons.bluetooth_disabled_rounded, 'Disconnected', p.textSecondary),
+      'PLAYBACK_STARTED' || 'PLAYBACK_RESUMED' => (Icons.play_arrow_rounded, 'Playback started', p.accent),
+      'PLAYBACK_PAUSED' || 'PLAYBACK_STOPPED' => (Icons.pause_rounded, 'Playback paused', p.textSecondary),
+      'VOLUME_CHANGED' => (Icons.volume_up_rounded, 'Volume ${event.volumePercent ?? '?'}%', p.warning),
+      _ => (Icons.event_note_rounded, event.eventType, p.textSecondary),
+    };
+    final detail = [
+      deviceName,
+      if (event.volumePercent != null && event.eventType != 'VOLUME_CHANGED') 'vol ${event.volumePercent}%',
+      if (event.reason == 'RECOVERED') 'recovered after restart',
+    ].join(' · ');
 
     return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: (isDark ? AppColors.glassBorder : AppColors.glassBorderLight).withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: p.border))),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerHigh,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              eventIcon,
-              color: iconColor,
-              size: 24,
-            ),
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.14), shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: 18),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  eventTitle,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppColors.editorialWhite,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  deviceName.toUpperCase(),
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                ),
+                Text(title, style: theme.textTheme.titleSmall),
+                const SizedBox(height: 2),
+                Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall?.copyWith(color: p.textSecondary)),
               ],
             ),
           ),
-          const SizedBox(width: 16),
-          Text(
-            timeStr,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: AppColors.onSurfaceVariant,
-            ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(Fmt.time(event.timestamp), style: theme.textTheme.labelLarge?.copyWith(color: p.textPrimary)),
+              Text(Fmt.day(event.timestamp), style: theme.textTheme.labelSmall?.copyWith(color: p.textTertiary)),
+            ],
           ),
         ],
       ),

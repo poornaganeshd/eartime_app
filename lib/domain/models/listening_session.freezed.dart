@@ -14,7 +14,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$PlaybackInterval {
 
- DateTime get startTime; DateTime? get endTime;
+ DateTime get startTime; DateTime? get endTime;/// Volume-curve attenuation (dB, ≤ 0) during this interval; null for legacy data.
+ double? get attenuationDb;
 /// Create a copy of PlaybackInterval
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +26,16 @@ $PlaybackIntervalCopyWith<PlaybackInterval> get copyWith => _$PlaybackIntervalCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PlaybackInterval&&(identical(other.startTime, startTime) || other.startTime == startTime)&&(identical(other.endTime, endTime) || other.endTime == endTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PlaybackInterval&&(identical(other.startTime, startTime) || other.startTime == startTime)&&(identical(other.endTime, endTime) || other.endTime == endTime)&&(identical(other.attenuationDb, attenuationDb) || other.attenuationDb == attenuationDb));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,startTime,endTime);
+int get hashCode => Object.hash(runtimeType,startTime,endTime,attenuationDb);
 
 @override
 String toString() {
-  return 'PlaybackInterval(startTime: $startTime, endTime: $endTime)';
+  return 'PlaybackInterval(startTime: $startTime, endTime: $endTime, attenuationDb: $attenuationDb)';
 }
 
 
@@ -45,7 +46,7 @@ abstract mixin class $PlaybackIntervalCopyWith<$Res>  {
   factory $PlaybackIntervalCopyWith(PlaybackInterval value, $Res Function(PlaybackInterval) _then) = _$PlaybackIntervalCopyWithImpl;
 @useResult
 $Res call({
- DateTime startTime, DateTime? endTime
+ DateTime startTime, DateTime? endTime, double? attenuationDb
 });
 
 
@@ -62,11 +63,12 @@ class _$PlaybackIntervalCopyWithImpl<$Res>
 
 /// Create a copy of PlaybackInterval
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? startTime = null,Object? endTime = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? startTime = null,Object? endTime = freezed,Object? attenuationDb = freezed,}) {
   return _then(_self.copyWith(
 startTime: null == startTime ? _self.startTime : startTime // ignore: cast_nullable_to_non_nullable
 as DateTime,endTime: freezed == endTime ? _self.endTime : endTime // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,attenuationDb: freezed == attenuationDb ? _self.attenuationDb : attenuationDb // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 
@@ -148,10 +150,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( DateTime startTime,  DateTime? endTime)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( DateTime startTime,  DateTime? endTime,  double? attenuationDb)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PlaybackInterval() when $default != null:
-return $default(_that.startTime,_that.endTime);case _:
+return $default(_that.startTime,_that.endTime,_that.attenuationDb);case _:
   return orElse();
 
 }
@@ -169,10 +171,10 @@ return $default(_that.startTime,_that.endTime);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( DateTime startTime,  DateTime? endTime)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( DateTime startTime,  DateTime? endTime,  double? attenuationDb)  $default,) {final _that = this;
 switch (_that) {
 case _PlaybackInterval():
-return $default(_that.startTime,_that.endTime);}
+return $default(_that.startTime,_that.endTime,_that.attenuationDb);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -186,10 +188,10 @@ return $default(_that.startTime,_that.endTime);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( DateTime startTime,  DateTime? endTime)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( DateTime startTime,  DateTime? endTime,  double? attenuationDb)?  $default,) {final _that = this;
 switch (_that) {
 case _PlaybackInterval() when $default != null:
-return $default(_that.startTime,_that.endTime);case _:
+return $default(_that.startTime,_that.endTime,_that.attenuationDb);case _:
   return null;
 
 }
@@ -201,11 +203,13 @@ return $default(_that.startTime,_that.endTime);case _:
 
 
 class _PlaybackInterval extends PlaybackInterval {
-  const _PlaybackInterval({required this.startTime, this.endTime}): super._();
+  const _PlaybackInterval({required this.startTime, this.endTime, this.attenuationDb}): super._();
   
 
 @override final  DateTime startTime;
 @override final  DateTime? endTime;
+/// Volume-curve attenuation (dB, ≤ 0) during this interval; null for legacy data.
+@override final  double? attenuationDb;
 
 /// Create a copy of PlaybackInterval
 /// with the given fields replaced by the non-null parameter values.
@@ -217,16 +221,16 @@ _$PlaybackIntervalCopyWith<_PlaybackInterval> get copyWith => __$PlaybackInterva
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PlaybackInterval&&(identical(other.startTime, startTime) || other.startTime == startTime)&&(identical(other.endTime, endTime) || other.endTime == endTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PlaybackInterval&&(identical(other.startTime, startTime) || other.startTime == startTime)&&(identical(other.endTime, endTime) || other.endTime == endTime)&&(identical(other.attenuationDb, attenuationDb) || other.attenuationDb == attenuationDb));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,startTime,endTime);
+int get hashCode => Object.hash(runtimeType,startTime,endTime,attenuationDb);
 
 @override
 String toString() {
-  return 'PlaybackInterval(startTime: $startTime, endTime: $endTime)';
+  return 'PlaybackInterval(startTime: $startTime, endTime: $endTime, attenuationDb: $attenuationDb)';
 }
 
 
@@ -237,7 +241,7 @@ abstract mixin class _$PlaybackIntervalCopyWith<$Res> implements $PlaybackInterv
   factory _$PlaybackIntervalCopyWith(_PlaybackInterval value, $Res Function(_PlaybackInterval) _then) = __$PlaybackIntervalCopyWithImpl;
 @override @useResult
 $Res call({
- DateTime startTime, DateTime? endTime
+ DateTime startTime, DateTime? endTime, double? attenuationDb
 });
 
 
@@ -254,11 +258,12 @@ class __$PlaybackIntervalCopyWithImpl<$Res>
 
 /// Create a copy of PlaybackInterval
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? startTime = null,Object? endTime = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? startTime = null,Object? endTime = freezed,Object? attenuationDb = freezed,}) {
   return _then(_PlaybackInterval(
 startTime: null == startTime ? _self.startTime : startTime // ignore: cast_nullable_to_non_nullable
 as DateTime,endTime: freezed == endTime ? _self.endTime : endTime // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as DateTime?,attenuationDb: freezed == attenuationDb ? _self.attenuationDb : attenuationDb // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 
@@ -268,7 +273,7 @@ as DateTime?,
 /// @nodoc
 mixin _$ListeningSession {
 
- String get id; String get canonicalDeviceId; String get deviceName; DateTime get connectTime; DateTime? get disconnectTime; List<PlaybackInterval> get intervals; bool get isPlaying; bool get isDisconnected;
+ String get id; String get canonicalDeviceId; String get deviceName; String get connectionType; DateTime get connectTime; DateTime? get disconnectTime; List<PlaybackInterval> get intervals; bool get isPlaying; bool get isDisconnected;
 /// Create a copy of ListeningSession
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -279,16 +284,16 @@ $ListeningSessionCopyWith<ListeningSession> get copyWith => _$ListeningSessionCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ListeningSession&&(identical(other.id, id) || other.id == id)&&(identical(other.canonicalDeviceId, canonicalDeviceId) || other.canonicalDeviceId == canonicalDeviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.connectTime, connectTime) || other.connectTime == connectTime)&&(identical(other.disconnectTime, disconnectTime) || other.disconnectTime == disconnectTime)&&const DeepCollectionEquality().equals(other.intervals, intervals)&&(identical(other.isPlaying, isPlaying) || other.isPlaying == isPlaying)&&(identical(other.isDisconnected, isDisconnected) || other.isDisconnected == isDisconnected));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ListeningSession&&(identical(other.id, id) || other.id == id)&&(identical(other.canonicalDeviceId, canonicalDeviceId) || other.canonicalDeviceId == canonicalDeviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.connectionType, connectionType) || other.connectionType == connectionType)&&(identical(other.connectTime, connectTime) || other.connectTime == connectTime)&&(identical(other.disconnectTime, disconnectTime) || other.disconnectTime == disconnectTime)&&const DeepCollectionEquality().equals(other.intervals, intervals)&&(identical(other.isPlaying, isPlaying) || other.isPlaying == isPlaying)&&(identical(other.isDisconnected, isDisconnected) || other.isDisconnected == isDisconnected));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,canonicalDeviceId,deviceName,connectTime,disconnectTime,const DeepCollectionEquality().hash(intervals),isPlaying,isDisconnected);
+int get hashCode => Object.hash(runtimeType,id,canonicalDeviceId,deviceName,connectionType,connectTime,disconnectTime,const DeepCollectionEquality().hash(intervals),isPlaying,isDisconnected);
 
 @override
 String toString() {
-  return 'ListeningSession(id: $id, canonicalDeviceId: $canonicalDeviceId, deviceName: $deviceName, connectTime: $connectTime, disconnectTime: $disconnectTime, intervals: $intervals, isPlaying: $isPlaying, isDisconnected: $isDisconnected)';
+  return 'ListeningSession(id: $id, canonicalDeviceId: $canonicalDeviceId, deviceName: $deviceName, connectionType: $connectionType, connectTime: $connectTime, disconnectTime: $disconnectTime, intervals: $intervals, isPlaying: $isPlaying, isDisconnected: $isDisconnected)';
 }
 
 
@@ -299,7 +304,7 @@ abstract mixin class $ListeningSessionCopyWith<$Res>  {
   factory $ListeningSessionCopyWith(ListeningSession value, $Res Function(ListeningSession) _then) = _$ListeningSessionCopyWithImpl;
 @useResult
 $Res call({
- String id, String canonicalDeviceId, String deviceName, DateTime connectTime, DateTime? disconnectTime, List<PlaybackInterval> intervals, bool isPlaying, bool isDisconnected
+ String id, String canonicalDeviceId, String deviceName, String connectionType, DateTime connectTime, DateTime? disconnectTime, List<PlaybackInterval> intervals, bool isPlaying, bool isDisconnected
 });
 
 
@@ -316,11 +321,12 @@ class _$ListeningSessionCopyWithImpl<$Res>
 
 /// Create a copy of ListeningSession
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? canonicalDeviceId = null,Object? deviceName = null,Object? connectTime = null,Object? disconnectTime = freezed,Object? intervals = null,Object? isPlaying = null,Object? isDisconnected = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? canonicalDeviceId = null,Object? deviceName = null,Object? connectionType = null,Object? connectTime = null,Object? disconnectTime = freezed,Object? intervals = null,Object? isPlaying = null,Object? isDisconnected = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,canonicalDeviceId: null == canonicalDeviceId ? _self.canonicalDeviceId : canonicalDeviceId // ignore: cast_nullable_to_non_nullable
 as String,deviceName: null == deviceName ? _self.deviceName : deviceName // ignore: cast_nullable_to_non_nullable
+as String,connectionType: null == connectionType ? _self.connectionType : connectionType // ignore: cast_nullable_to_non_nullable
 as String,connectTime: null == connectTime ? _self.connectTime : connectTime // ignore: cast_nullable_to_non_nullable
 as DateTime,disconnectTime: freezed == disconnectTime ? _self.disconnectTime : disconnectTime // ignore: cast_nullable_to_non_nullable
 as DateTime?,intervals: null == intervals ? _self.intervals : intervals // ignore: cast_nullable_to_non_nullable
@@ -408,10 +414,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String canonicalDeviceId,  String deviceName,  DateTime connectTime,  DateTime? disconnectTime,  List<PlaybackInterval> intervals,  bool isPlaying,  bool isDisconnected)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String canonicalDeviceId,  String deviceName,  String connectionType,  DateTime connectTime,  DateTime? disconnectTime,  List<PlaybackInterval> intervals,  bool isPlaying,  bool isDisconnected)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ListeningSession() when $default != null:
-return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectTime,_that.disconnectTime,_that.intervals,_that.isPlaying,_that.isDisconnected);case _:
+return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectionType,_that.connectTime,_that.disconnectTime,_that.intervals,_that.isPlaying,_that.isDisconnected);case _:
   return orElse();
 
 }
@@ -429,10 +435,10 @@ return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectT
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String canonicalDeviceId,  String deviceName,  DateTime connectTime,  DateTime? disconnectTime,  List<PlaybackInterval> intervals,  bool isPlaying,  bool isDisconnected)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String canonicalDeviceId,  String deviceName,  String connectionType,  DateTime connectTime,  DateTime? disconnectTime,  List<PlaybackInterval> intervals,  bool isPlaying,  bool isDisconnected)  $default,) {final _that = this;
 switch (_that) {
 case _ListeningSession():
-return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectTime,_that.disconnectTime,_that.intervals,_that.isPlaying,_that.isDisconnected);}
+return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectionType,_that.connectTime,_that.disconnectTime,_that.intervals,_that.isPlaying,_that.isDisconnected);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -446,10 +452,10 @@ return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectT
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String canonicalDeviceId,  String deviceName,  DateTime connectTime,  DateTime? disconnectTime,  List<PlaybackInterval> intervals,  bool isPlaying,  bool isDisconnected)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String canonicalDeviceId,  String deviceName,  String connectionType,  DateTime connectTime,  DateTime? disconnectTime,  List<PlaybackInterval> intervals,  bool isPlaying,  bool isDisconnected)?  $default,) {final _that = this;
 switch (_that) {
 case _ListeningSession() when $default != null:
-return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectTime,_that.disconnectTime,_that.intervals,_that.isPlaying,_that.isDisconnected);case _:
+return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectionType,_that.connectTime,_that.disconnectTime,_that.intervals,_that.isPlaying,_that.isDisconnected);case _:
   return null;
 
 }
@@ -461,12 +467,13 @@ return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectT
 
 
 class _ListeningSession extends ListeningSession {
-  const _ListeningSession({required this.id, required this.canonicalDeviceId, required this.deviceName, required this.connectTime, this.disconnectTime, required final  List<PlaybackInterval> intervals, this.isPlaying = false, this.isDisconnected = false}): _intervals = intervals,super._();
+  const _ListeningSession({required this.id, required this.canonicalDeviceId, required this.deviceName, this.connectionType = 'bluetooth', required this.connectTime, this.disconnectTime, required final  List<PlaybackInterval> intervals, this.isPlaying = false, this.isDisconnected = false}): _intervals = intervals,super._();
   
 
 @override final  String id;
 @override final  String canonicalDeviceId;
 @override final  String deviceName;
+@override@JsonKey() final  String connectionType;
 @override final  DateTime connectTime;
 @override final  DateTime? disconnectTime;
  final  List<PlaybackInterval> _intervals;
@@ -489,16 +496,16 @@ _$ListeningSessionCopyWith<_ListeningSession> get copyWith => __$ListeningSessio
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ListeningSession&&(identical(other.id, id) || other.id == id)&&(identical(other.canonicalDeviceId, canonicalDeviceId) || other.canonicalDeviceId == canonicalDeviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.connectTime, connectTime) || other.connectTime == connectTime)&&(identical(other.disconnectTime, disconnectTime) || other.disconnectTime == disconnectTime)&&const DeepCollectionEquality().equals(other._intervals, _intervals)&&(identical(other.isPlaying, isPlaying) || other.isPlaying == isPlaying)&&(identical(other.isDisconnected, isDisconnected) || other.isDisconnected == isDisconnected));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ListeningSession&&(identical(other.id, id) || other.id == id)&&(identical(other.canonicalDeviceId, canonicalDeviceId) || other.canonicalDeviceId == canonicalDeviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.connectionType, connectionType) || other.connectionType == connectionType)&&(identical(other.connectTime, connectTime) || other.connectTime == connectTime)&&(identical(other.disconnectTime, disconnectTime) || other.disconnectTime == disconnectTime)&&const DeepCollectionEquality().equals(other._intervals, _intervals)&&(identical(other.isPlaying, isPlaying) || other.isPlaying == isPlaying)&&(identical(other.isDisconnected, isDisconnected) || other.isDisconnected == isDisconnected));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,canonicalDeviceId,deviceName,connectTime,disconnectTime,const DeepCollectionEquality().hash(_intervals),isPlaying,isDisconnected);
+int get hashCode => Object.hash(runtimeType,id,canonicalDeviceId,deviceName,connectionType,connectTime,disconnectTime,const DeepCollectionEquality().hash(_intervals),isPlaying,isDisconnected);
 
 @override
 String toString() {
-  return 'ListeningSession(id: $id, canonicalDeviceId: $canonicalDeviceId, deviceName: $deviceName, connectTime: $connectTime, disconnectTime: $disconnectTime, intervals: $intervals, isPlaying: $isPlaying, isDisconnected: $isDisconnected)';
+  return 'ListeningSession(id: $id, canonicalDeviceId: $canonicalDeviceId, deviceName: $deviceName, connectionType: $connectionType, connectTime: $connectTime, disconnectTime: $disconnectTime, intervals: $intervals, isPlaying: $isPlaying, isDisconnected: $isDisconnected)';
 }
 
 
@@ -509,7 +516,7 @@ abstract mixin class _$ListeningSessionCopyWith<$Res> implements $ListeningSessi
   factory _$ListeningSessionCopyWith(_ListeningSession value, $Res Function(_ListeningSession) _then) = __$ListeningSessionCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String canonicalDeviceId, String deviceName, DateTime connectTime, DateTime? disconnectTime, List<PlaybackInterval> intervals, bool isPlaying, bool isDisconnected
+ String id, String canonicalDeviceId, String deviceName, String connectionType, DateTime connectTime, DateTime? disconnectTime, List<PlaybackInterval> intervals, bool isPlaying, bool isDisconnected
 });
 
 
@@ -526,11 +533,12 @@ class __$ListeningSessionCopyWithImpl<$Res>
 
 /// Create a copy of ListeningSession
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? canonicalDeviceId = null,Object? deviceName = null,Object? connectTime = null,Object? disconnectTime = freezed,Object? intervals = null,Object? isPlaying = null,Object? isDisconnected = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? canonicalDeviceId = null,Object? deviceName = null,Object? connectionType = null,Object? connectTime = null,Object? disconnectTime = freezed,Object? intervals = null,Object? isPlaying = null,Object? isDisconnected = null,}) {
   return _then(_ListeningSession(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,canonicalDeviceId: null == canonicalDeviceId ? _self.canonicalDeviceId : canonicalDeviceId // ignore: cast_nullable_to_non_nullable
 as String,deviceName: null == deviceName ? _self.deviceName : deviceName // ignore: cast_nullable_to_non_nullable
+as String,connectionType: null == connectionType ? _self.connectionType : connectionType // ignore: cast_nullable_to_non_nullable
 as String,connectTime: null == connectTime ? _self.connectTime : connectTime // ignore: cast_nullable_to_non_nullable
 as DateTime,disconnectTime: freezed == disconnectTime ? _self.disconnectTime : disconnectTime // ignore: cast_nullable_to_non_nullable
 as DateTime?,intervals: null == intervals ? _self._intervals : intervals // ignore: cast_nullable_to_non_nullable

@@ -1,5 +1,5 @@
 name: eartime_app
-description: "A new Flutter project."
+description: "EarTime - real-time headphone listening time and hearing-exposure tracker."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ^3.11.0
@@ -34,26 +34,25 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  flutter_riverpod: any
-  freezed_annotation: any
-  json_annotation: any
-  google_fonts: any
-  plugin_platform_interface: any
-  permission_handler: ^11.3.1
-  drift: ^2.32.0
-  sqlite3_flutter_libs: any
-  path_provider: any
-  path: any
+  flutter_riverpod: ^3.3.1
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.11.0
+  google_fonts: ^8.2.1
+  permission_handler: ^11.4.0
+  drift: ^2.34.3
+  sqlite3_flutter_libs: ^0.6.0
+  path_provider: ^2.1.5
+  path: ^1.9.1
   sqlite3: ^3.5.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  build_runner: any
-  freezed: any
-  json_serializable: any
-  drift_dev: ^2.32.0
+  build_runner: ^2.10.0
+  freezed: ^3.2.5
+  json_serializable: ^6.13.0
+  drift_dev: ^2.34.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

@@ -9,7 +9,7 @@ class DiagnosticScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final rawEventsAsync = ref.watch(allEventsProvider);
+    final rawEventsAsync = ref.watch(recentEventsProvider); // newest first
     final liveSessionState = ref.watch(liveSessionProvider);
     final activeDevice = liveSessionState.activeDevice;
     final bleDiscoveryAsync = ref.watch(bleDiscoveryResultProvider);
@@ -18,7 +18,7 @@ class DiagnosticScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
-        title: Text('Diagnostics (Phase 5)', style: theme.textTheme.titleMedium?.copyWith(color: AppColors.editorialWhite)),
+        title: Text('Live pipeline state', style: theme.textTheme.titleMedium?.copyWith(color: AppColors.editorialWhite)),
         iconTheme: const IconThemeData(color: AppColors.editorialWhite),
       ),
       body: Padding(
@@ -38,6 +38,14 @@ class DiagnosticScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Active Device: ${activeDevice?.displayName ?? 'None'} (${activeDevice?.canonicalDeviceId ?? 'N/A'}) - ${activeDevice?.playbackState.name ?? 'unknown'}', style: const TextStyle(color: AppColors.secondary)),
+                  const SizedBox(height: 6),
+                  Text(
+                    'initialized=${liveSessionState.isInitialized} monitoring=${liveSessionState.monitoring} '
+                    'playing=${liveSessionState.isPlaying} since=${liveSessionState.playbackStartedAt} '
+                    'devices=${liveSessionState.connectedDevices.length} volume=${liveSessionState.volume?.percent}% '
+                    '(${liveSessionState.volume?.attenuationDb.toStringAsFixed(1)} dB)',
+                    style: const TextStyle(color: AppColors.editorialWhite, fontSize: 12, fontFamily: 'monospace'),
+                  ),
                 ],
               ),
             ),
@@ -101,10 +109,17 @@ class DiagnosticScreen extends ConsumerWidget {
                     if (events.isEmpty) {
                       return const Center(child: Text('No events yet.', style: TextStyle(color: AppColors.onSurfaceVariant)));
                     }
-                    final event = events.first; // Reverse chronological, so first is latest
-                    return Text(
-                      'LATEST EVENT:\nType: ${event.eventType}\nID: ${event.canonicalDeviceId}\nDevice: ${event.deviceName}\nTime: ${event.timestamp}',
-                      style: const TextStyle(color: AppColors.editorialWhite, fontFamily: 'monospace'),
+                    final latest = events.take(50).toList();
+                    return ListView.builder(
+                      itemCount: latest.length,
+                      itemBuilder: (context, i) {
+                        final e = latest[i];
+                        return Text(
+                          '${e.timestamp.toIso8601String().substring(5, 19)}  ${e.eventType}  ${e.deviceName}'
+                          '${e.volumePercent == null ? '' : '  vol=${e.volumePercent}%'}${e.reason == null ? '' : '  (${e.reason})'}',
+                          style: const TextStyle(color: AppColors.editorialWhite, fontFamily: 'monospace', fontSize: 11),
+                        );
+                      },
                     );
                   },
                   loading: () => const Center(child: Text('Waiting for events...', style: TextStyle(color: AppColors.onSurfaceVariant))),

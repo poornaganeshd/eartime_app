@@ -6,7 +6,6 @@ import '../../providers/data_providers.dart';
 import '../../domain/models/tracking_event.dart';
 import '../../domain/logic/capability_detector.dart';
 import '../../domain/models/earbud_capabilities.dart';
-import '../../data/tracking_platform.dart';
 
 class DeveloperDiagnosticsScreen extends ConsumerStatefulWidget {
   const DeveloperDiagnosticsScreen({super.key});
@@ -48,7 +47,7 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
       final activeDevice = ref.read(liveSessionProvider).activeDevice;
       if (activeDevice != null && activeDevice.canonicalDeviceId.contains(':')) {
         _logAction('TRIGGERING NATIVE BLE DIAGNOSTIC FOR ${activeDevice.canonicalDeviceId}');
-        TrackingPlatform.startBleDiagnostic(activeDevice.canonicalDeviceId);
+        ref.read(trackingPlatformProvider).startBleDiagnostic(activeDevice.canonicalDeviceId);
       }
     });
   }
@@ -130,7 +129,6 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
 
     final capabilities = ref.watch(earbudCapabilitiesProvider);
     final discoveryResult = ref.watch(bleDiscoveryResultProvider);
-    final diagnosticState = ref.watch(bleDiagnosticStateProvider);
 
     ref.listen<AsyncValue<TrackingEvent>>(bleDiagnosticStateProvider, (previous, next) {
       if (next.hasValue && next.value != null) {
@@ -140,13 +138,12 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
           if (event.message != null) {
             _gattMessage = event.message;
           }
+          _logs.add(_LogEntry(
+            timestamp: DateTime.fromMillisecondsSinceEpoch(event.timestamp),
+            label: '[GATT STATE] $_gattState${event.message != null ? ' - ${event.message}' : ''}',
+            isAction: true, // Make it pop visually
+          ));
         });
-        
-        _logs.add(_LogEntry(
-          timestamp: DateTime.fromMillisecondsSinceEpoch(event.timestamp),
-          label: '[GATT STATE] ${_gattState}${event.message != null ? ' - ${event.message}' : ''}',
-          isAction: true, // Make it pop visually
-        ));
         _scrollToBottom();
       }
     });
@@ -165,7 +162,7 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
                   _gattState = 'REFRESHING...';
                   _gattMessage = null;
                 });
-                TrackingPlatform.startBleDiagnostic(activeDevice.canonicalDeviceId);
+                ref.read(trackingPlatformProvider).startBleDiagnostic(activeDevice.canonicalDeviceId);
               }
             },
             child: const Text('Refresh Diagnostic', style: TextStyle(color: AppColors.editorialWhite)),
@@ -286,8 +283,8 @@ class _DeveloperDiagnosticsScreenState extends ConsumerState<DeveloperDiagnostic
       return const SizedBox.shrink();
     }
     
-    final deviceMap = discoveryResult['device'] as Map<String, dynamic>?;
-    final services = deviceMap?['services'] as List<dynamic>? ?? [];
+    // bleDiscoveryResultProvider already yields the inner device map.
+    final services = discoveryResult['services'] as List<dynamic>? ?? [];
 
     return LiquidGlassSurface(
       padding: const EdgeInsets.all(12),

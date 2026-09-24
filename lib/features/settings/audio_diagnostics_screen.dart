@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../widgets/liquid_glass_surface.dart';
-import '../../data/tracking_platform.dart';
 import '../../providers/data_providers.dart';
 
 class AudioDiagnosticsScreen extends ConsumerStatefulWidget {
@@ -27,7 +26,8 @@ class _AudioDiagnosticsScreenState extends ConsumerState<AudioDiagnosticsScreen>
       _isLoading = true;
     });
     try {
-      final data = await TrackingPlatform.getAudioDiagnostics();
+      final data = await ref.read(trackingPlatformProvider).getAudioDiagnostics();
+      if (!mounted) return;
       setState(() {
         _diagData = data;
       });
@@ -162,10 +162,10 @@ class _AudioDiagnosticsScreenState extends ConsumerState<AudioDiagnosticsScreen>
                               const SizedBox(height: 8),
                               ...rawServices.map((service) {
                                 final chars = (service['characteristics'] as List<dynamic>?)?.cast<Map<dynamic, dynamic>>() ?? [];
-                                return _buildDataBox(
-                                  'Service: ${service['uuid']}\n' +
-                                  chars.map((c) => '  Char: ${c['uuid']}\n    Props: ${(c['properties'] as List<dynamic>?)?.join(", ")}').join('\n')
-                                );
+                                final charLines = chars
+                                    .map((c) => '  Char: ${c['uuid']}\n    Props: ${(c['properties'] as List<dynamic>?)?.join(", ")}')
+                                    .join('\n');
+                                return _buildDataBox('Service: ${service['uuid']}\n$charLines');
                               }),
                             ],
                           );

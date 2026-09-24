@@ -1,16 +1,26 @@
 # Features
 
-## Implemented / Verified
-- **Passive Background Tracking**: Application tracks audio sessions without manual start/stop interaction.
-- **Persistent Database**: All tracking events are saved in SQLite using Drift.
-- **Real-Time UI**: `LiveSessionNotifier` keeps the Home screen perfectly synced with the exact state of the earbuds.
-- **Live Timer**: Accurately counts elapsed listening time based on play/pause timestamps.
-- **BLE Diagnostics**: App connects to the earbud's GATT server and streams OPOv1 characteristic notifications for reverse engineering.
+## Implemented (Phase 7) — automated tests pass, device verification pending
+- **Passive real-time tracking** of Bluetooth (A2DP, LE Audio), hearing aids, wired and USB headphones.
+- **Accurate play/pause detection** (`isMusicActive` + routing), only counting audio that actually
+  reaches the headphones.
+- **Crash-safe history**: native journal, idempotent ingestion, recovery after process death,
+  restart after reboot.
+- **Live dashboard (Now)**: today's ring vs. daily goal, live "playing for" timer, device, volume,
+  estimated dB with safety label, weekly allowance, today's sessions/longest/breaks, recent sessions.
+- **Insights**: Today / Week / Month / Year totals, daily average, interactive column chart,
+  sessions, average and longest stretch, time-of-day, sound exposure (Leq, peak, time ≥ 80 dB, dose),
+  per-device breakdown.
+- **History**: sessions grouped by day with per-stretch level detail; raw event log.
+- **Hearing**: live level gauge, hearing score with the single most useful recommendation,
+  7-day WHO sound allowance with daily dose chart, safe-time-per-level table.
+- **Background hearing alerts**: sustained loud listening, 60/60 break reminder, daily goal,
+  weekly allowance reached. Live foreground notification with today's time, level and allowance.
+- **Devices**: connected now + last-30-day device list with listening time.
+- **Settings**: monitoring on/off, battery-reliability shortcut, notification permission,
+  headphone calibration, alert threshold, break reminder, daily goal, theme, CSV export, clear history.
+- **Developer diagnostics**: live pipeline state, audio routing, BLE GATT/OPOv1 observation.
 
-## Implemented / Requires Device Verification
-- **Core Sync Fix**: Home screen correctly resets to "IDLE" if app is killed and reopened when earbuds are not connected.
-- **Device Identity Fix**: Connects and displays "OnePlus Nord Buds 3 Pro" instead of the Android `AudioManager` device route (`CPH2447`).
-
-## Planned / Proposed
-- **Phase 5: Per-Ear Detection**: Decode OPOv1 BLE packets to determine whether the user is wearing the Left, Right, or Both earbuds independently.
-- **Phase 7: Historical Analytics**: Render charts and daily summaries from the Drift database.
+## Planned
+- **Phase 5: Per-ear detection** — decode OPOv1 packets (left/right/in-ear).
+- Per-headset calibration presets.

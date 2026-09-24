@@ -7,6 +7,7 @@ import '../providers/ear_state_provider.dart';
 class EarbudCapabilitiesNotifier extends Notifier<EarbudCapabilities> {
   @override
   EarbudCapabilities build() => const EarbudCapabilities(providerName: 'Initializing...');
+  @override
   set state(EarbudCapabilities value) => super.state = value;
 }
 
@@ -15,6 +16,7 @@ final earbudCapabilitiesProvider = NotifierProvider<EarbudCapabilitiesNotifier, 
 class ActiveEarStateProviderNotifier extends Notifier<EarStateProvider?> {
   @override
   EarStateProvider? build() => null;
+  @override
   set state(EarStateProvider? value) => super.state = value;
 }
 

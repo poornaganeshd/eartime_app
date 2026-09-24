@@ -1,139 +1,140 @@
 package com.eartime.eartime_app.tracking
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.media.AudioDeviceInfo
 import android.os.Build
 import android.util.Log
 
+/**
+ * Classifies Android audio outputs and builds the stable logical device model sent to Flutter.
+ *
+ * A single physical headset commonly exposes several routes (A2DP for media, SCO for calls,
+ * LE Audio for both). All routes of one headset resolve to the same logical id (its MAC address),
+ * and [TrackingEngine] reference-counts those routes so that one route disappearing never
+ * disconnects the headset (Bug A2).
+ */
 object AudioDeviceDetector {
 
     private const val TAG = "EarTimeDiag"
 
+    // Constants that are not available on every compile/min SDK level.
+    const val TYPE_HEARING_AID = 23 // API 28
+    const val TYPE_BLE_HEADSET = 26 // API 31
+    const val TYPE_BLE_SPEAKER = 27 // API 31
+    const val TYPE_BLE_BROADCAST = 30 // API 33
+
+    private val BLUETOOTH_TYPES = setOf(
+        AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+        AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+        TYPE_HEARING_AID,
+        TYPE_BLE_HEADSET,
+        TYPE_BLE_SPEAKER,
+        TYPE_BLE_BROADCAST,
+    )
+
+    private val WIRED_TYPES = setOf(
+        AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+        AudioDeviceInfo.TYPE_WIRED_HEADSET,
+    )
+
+    private val USB_TYPES = setOf(
+        AudioDeviceInfo.TYPE_USB_DEVICE,
+        AudioDeviceInfo.TYPE_USB_HEADSET,
+        AudioDeviceInfo.TYPE_USB_ACCESSORY,
+    )
+
+    fun isBluetoothType(type: Int) = type in BLUETOOTH_TYPES
+
+    /** Media-capable routes. SCO is call-only audio and never carries media playback. */
+    fun isMediaRouteType(type: Int) = type != AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+
     /**
-     * Determines if the audio device is an external listening device that we care about.
-     * Ignores built-in speakers, earpieces, and internal virtual A2DP routes (e.g. CPH2447).
+     * True when the output is something worn on/in the ear (or a personal listening device).
+     * Built-in speakers, earpieces, HDMI, cast routes, etc. are rejected.
      */
     fun isExternalListeningDevice(device: AudioDeviceInfo): Boolean {
-        val address = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            device.address
-        } else {
-            "N/A"
-        }
-        val name = device.productName?.toString() ?: "null"
-        
-        Log.i(TAG, "[DETECTOR] examining device\nname=$name\ntype=${device.type}\naddress=$address\nid=${device.id}\nsink=${device.isSink}\nsource=${device.isSource}")
-
-        if (device.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP && device.isSink) {
-            Log.i(TAG, "[DETECTOR] *** NORD_BUDS_CANDIDATE_FOUND ***")
-        }
-
-        // SINK CHECK
-        if (!device.isSink) {
-            Log.i(TAG, "[DETECTOR] sink check = FAIL")
-            Log.i(TAG, "[DETECTOR] exact reason if rejected: Device is not an output sink")
-            Log.i(TAG, "[DETECTOR] compatibility result = FAIL")
-            return false
-        }
-        Log.i(TAG, "[DETECTOR] sink check = PASS")
-
+        if (!device.isSink) return false
         val type = device.type
-        val isBluetooth = type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || 
-                          type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
-                          type == 26 || // TYPE_BLE_HEADSET
-                          type == 27 || // TYPE_BLE_SPEAKER
-                          type == 30    // TYPE_BLE_BROADCAST
-                          
-        // ADDRESS CHECK
-        if (isBluetooth) {
-            if (address.isNullOrEmpty() || address == "00:00:00:00:00:00") {
-                Log.w(TAG, "[DETECTOR] address check = WARN (Missing or zeroed MAC address)")
-            } else {
-                Log.i(TAG, "[DETECTOR] address check = PASS")
-            }
-        } else {
-            Log.i(TAG, "[DETECTOR] address check = N/A (Not BT)")
-        }
-
-        // TYPE CHECK
-        val isValidType = when (type) {
-            AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
-            AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
-            26, 27, 30, // Android 13+ BLE Audio types
-            AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
-            AudioDeviceInfo.TYPE_WIRED_HEADSET,
-            AudioDeviceInfo.TYPE_USB_DEVICE,
-            AudioDeviceInfo.TYPE_USB_HEADSET,
-            AudioDeviceInfo.TYPE_USB_ACCESSORY -> true
-            else -> false
-        }
-
-        if (!isValidType) {
-            Log.i(TAG, "[DETECTOR] type check = FAIL")
-            Log.i(TAG, "[DETECTOR] exact reason if rejected: Unsupported device type $type")
-            Log.i(TAG, "[DETECTOR] compatibility result = FAIL")
-            return false
-        }
-        Log.i(TAG, "[DETECTOR] type check = PASS")
-
-        Log.i(TAG, "[DETECTOR] exact reason if accepted: Device passed all filters (type $type, isSink=true)")
-        Log.i(TAG, "[DETECTOR] compatibility result = PASS")
-        return true
+        val accepted = type in BLUETOOTH_TYPES || type in WIRED_TYPES || type in USB_TYPES
+        Log.d(TAG, "[DETECTOR] name=${device.productName} type=$type id=${device.id} accepted=$accepted")
+        return accepted
     }
 
-    /**
-     * Maps Android AudioDeviceInfo to a string connection type.
-     */
-    fun getConnectionType(type: Int): String {
-        return when (type) {
-            AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
-            AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
-            26, 27, 30 -> "bluetooth"
-            AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
-            AudioDeviceInfo.TYPE_WIRED_HEADSET -> "wired"
-            AudioDeviceInfo.TYPE_USB_DEVICE,
-            AudioDeviceInfo.TYPE_USB_HEADSET,
-            AudioDeviceInfo.TYPE_USB_ACCESSORY -> "usb"
-            else -> "unknown"
+    fun getConnectionType(type: Int): String = when (type) {
+        TYPE_HEARING_AID -> "hearing_aid"
+        in BLUETOOTH_TYPES -> "bluetooth"
+        in WIRED_TYPES -> "wired"
+        in USB_TYPES -> "usb"
+        else -> "unknown"
+    }
+
+    /** A usable MAC address, or null for empty, zeroed or anonymised ("XX:XX:…") addresses. */
+    fun normalizeAddress(raw: String?): String? {
+        if (raw.isNullOrBlank()) return null
+        val upper = raw.trim().uppercase()
+        if (upper == "00:00:00:00:00:00") return null
+        if (!BluetoothAdapter.checkBluetoothAddress(upper)) return null
+        return upper
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun resolveBluetoothName(adapter: BluetoothAdapter?, address: String): String? {
+        if (adapter == null) return null
+        return try {
+            val remote = adapter.getRemoteDevice(address)
+            val alias = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) remote.alias else null
+            (alias ?: remote.name)?.takeIf { it.isNotBlank() }
+        } catch (e: SecurityException) {
+            null
+        } catch (e: IllegalArgumentException) {
+            null
         }
     }
 
     /**
-     * Extracts structured device info to a Map.
-     * Uses provided fallbackName/fallbackAddress if Android AudioManager obscures them.
+     * Builds the logical device map.
+     *
+     * Name priority: Bluetooth alias/name resolved from the route's own MAC (the user-visible name),
+     * then [fallbackName] (the connected A2DP device, used only when Android hides the MAC),
+     * then AudioManager's productName (which on some OEMs is the *phone* model, e.g. "CPH2447").
      */
     fun extractDeviceInfo(
         device: AudioDeviceInfo,
+        adapter: BluetoothAdapter?,
         fallbackName: String? = null,
-        fallbackAddress: String? = null
+        fallbackAddress: String? = null,
     ): Map<String, Any?> {
-        val hardwareAddress = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            device.address.takeIf { it.isNotEmpty() && it != "00:00:00:00:00:00" && it.contains(":") }
-        } else {
-            null
-        } ?: fallbackAddress
-        
-        // Prefer the Bluetooth-provided name (fallbackName) because Android's AudioManager
-        // often incorrectly reports the system hardware model (e.g. CPH2447) instead of the earbud name.
-        val name = fallbackName ?: device.productName?.toString()?.takeIf { it.isNotEmpty() } ?: "Bluetooth Audio Device"
-        
-        // Use MAC address as stable ID if available, fallback to unique name + type
-        val stableId = hardwareAddress ?: "${name}_${device.type}"
-        
-        val info = mapOf(
+        val type = device.type
+        val bluetooth = isBluetoothType(type)
+        val ownAddress = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) normalizeAddress(device.address) else null
+        val address = ownAddress ?: if (bluetooth) normalizeAddress(fallbackAddress) else null
+
+        val productName = device.productName?.toString()?.takeIf { it.isNotBlank() }
+        val name = when {
+            bluetooth && address != null -> resolveBluetoothName(adapter, address) ?: fallbackName ?: productName
+            bluetooth -> fallbackName ?: productName
+            else -> productName
+        } ?: defaultName(type)
+
+        val connectionType = getConnectionType(type)
+        // Wired/USB routes have no MAC; they are keyed by type class so re-plugging keeps the same id.
+        val stableId = address ?: "${connectionType}_${name.replace(' ', '_')}"
+
+        return mapOf(
             "id" to stableId,
-            "systemId" to device.id.toString(), // The volatile system ID
-            "hardwareAddress" to hardwareAddress,
+            "systemId" to device.id.toString(),
+            "hardwareAddress" to address,
             "friendlyName" to name,
-            "connectionType" to getConnectionType(device.type),
-            "nativeType" to device.type
+            "connectionType" to connectionType,
+            "nativeType" to type,
         )
-        Log.i(TAG, "[DETECTOR] Device model created: $info")
-        return info
     }
 
-    /**
-     * Diagnostic logging for identifying devices on the physical hardware.
-     */
-    fun logDeviceDiagnostic(device: AudioDeviceInfo, context: String, reason: String = "") {
-        // Obsolete, keeping empty or minimal to avoid duplicative logs
+    private fun defaultName(type: Int): String = when (getConnectionType(type)) {
+        "wired" -> "Wired headphones"
+        "usb" -> "USB headphones"
+        "hearing_aid" -> "Hearing aid"
+        else -> "Bluetooth audio device"
     }
 }

@@ -1,55 +1,45 @@
 # EarTime Project Handoff
 
-Welcome to the EarTime project! This document serves as the primary entry point for any new AI agent taking over engineering tasks.
+Start here, then read CURRENT_STATE.md, NATIVE_FLUTTER_CONTRACT.md and BUGS.md.
 
 ## 1. What is EarTime?
-EarTime is a Flutter application designed to passively track Bluetooth earbud ambient listening time (like Screen Time, but for audio). It relies on a persistent native Android foreground service to detect when earbuds connect, disconnect, play, or pause audio, and logs this data to a local SQLite database (Drift) to visualize listening habits.
+A passive, real-time headphone listening tracker. A native Android foreground service watches audio
+routing, playback and volume; Flutter shows live listening time, sessions, analytics and WHO-based
+hearing-exposure guidance. Everything stays on the device.
 
-## 2. What has already been implemented?
-- A robust Drift (SQLite) database architecture (`SessionManager`).
-- A Riverpod-based reactive pipeline (`LiveSessionNotifier`).
-- A persistent Android foreground service (`AudioTrackingService`) that survives app termination.
-- A platform channel (`EventChannel`) bridging Android audio callbacks to Flutter.
-- A glassmorphic UI with real-time timers and a historical timeline.
-- A permission onboarding flow.
+## 2. What is implemented (Phase 7)
+- Single-threaded native `TrackingEngine`: route ref-counting (A2 fix), `isMusicActive` playback
+  truth (B4/D/E fix), media-routing attribution, volume → dB estimate, exposure dose, 5 s reconcile
+  tick, heartbeat + crash recovery, boot restart, live notification, hearing alerts
+  (loud ≥ threshold for 3 min, 60/60 break reminder, daily goal, weekly allowance).
+- Durable native journal + idempotent Flutter ingestion (no event loss when the UI is closed).
+- Drift schema v2 (volume columns, settings table, index) with a proper migration from v1.
+- Pure, tested domain logic: `LiveSessionReducer`, `SessionManager`, `ListeningAnalyzer`, `ExposureMath`.
+- Redesigned UI (light + dark): Now, Insights (Today/Week/Month/Year), History (sessions + events),
+  Hearing (live gauge, score, weekly dose, safe-time table), Devices, Settings (monitoring, calibration,
+  alerts, goal, theme, CSV export, clear data, developer diagnostics).
 
-## 3. How does the architecture work?
-- **Native**: `AudioTrackingService` registers `AudioDeviceCallback` and `AudioPlaybackCallback`. It maps physical devices to logical models in `AudioDeviceDetector`. It pipes events to `TrackingEventBroker`.
-- **Bridge**: `TrackingPlatform` listens to the `EventChannel` and emits strongly-typed `TrackingEvent`s.
-- **Flutter**: `trackingPipelineProvider` routes events to `LiveSessionNotifier`, which builds the `LiveSessionState`. `SessionManager` silently commits new sessions and updates to Drift.
+## 3. How to build & test
+```bash
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs   # after changing freezed/drift sources
+flutter analyze        # must report no issues
+flutter test           # 64 tests: reducer, sessions, analyzer, exposure, DB, pipeline, widgets
+flutter run            # on an Android device (minSdk = Flutter default, target/compile 36)
+```
 
-## 4. What is currently broken?
-- **Bug A2**: Earbuds appear upon connection, but instantly disappear.
-- **Bugs B/D/E**: The `LiveTimerWidget` continues ticking when paused, and play/pause state synchronization is buggy.
+## 4. What still needs a human
+- Physical verification of the test matrix in CURRENT_STATE.md §6 (no device/SDK in the agent
+  environment; Kotlin was compile-checked against android-all API 36 only).
+- Optional: per-headset calibration presets for `maxOutputDb`.
 
-## 5. What has actually been physically tested?
-See `CURRENT_STATE.md` for the full physical test matrix. Disconnected launches (A1), disconnect events (A4), timeline accuracy (A5), and midnight crossing (F) all PASS.
+## 5. Where things live
+See CURRENT_STATE.md §4–5. Protocol: NATIVE_FLUTTER_CONTRACT.md. Decisions: DECISIONS.md.
 
-## 6. What is confirmed?
-- The app's startup "reopen failure" was confirmed to be a Flutter UI redraw loop (`cancelAndRedraw`), which is now FIXED.
-- The A2 bug is confirmed to be an identity eviction bug in `onAudioDevicesRemoved` when secondary Bluetooth routes (like SCO) are disconnected by the OS.
+## 6. Rules
+- Don't reintroduce a second `receiveBroadcastStream()` — use `trackingPlatformProvider`.
+- Don't write history from the live stream — only `EventIngestor` writes events.
+- Keep `ExposureMath.kt` and `exposure_math.dart` identical.
+- Don't infer per-ear state from uninterpreted BLE packets.
 
-## 7. What is only a hypothesis?
-- The timer glitches (B/D/E) are hypothesized to be `LiveSessionNotifier` state management flaws, but they haven't been conclusively diagnosed with logs yet.
-
-## 8. What files implement each feature?
-- **Android Tracking**: `AudioTrackingService.kt`, `AudioDeviceDetector.kt`
-- **Flutter State**: `live_session_state.dart`, `data_providers.dart`
-- **Database**: `session_manager.dart`, `database.dart`
-- **UI**: `app_shell.dart`, `live_timer_widget.dart`
-
-## 9. What should NOT be changed?
-- DO NOT modify the Drift database schema.
-- DO NOT modify the `LiveTimerWidget` or Pause/Resume logic until formally diagnosed.
-- DO NOT invent new Android architectural patterns (like WorkManager) to replace the existing FGS.
-
-## 10. What is the exact next engineering task?
-Implement the diagnosed fix for **Bug A2** in `AudioTrackingService.kt`. Update `onAudioDevicesRemoved` to ensure that no remaining active output routes exist for the physical MAC address before evicting it from `connectedDevices`.
-
-## 11. What evidence is required before implementation?
-We already have the diagnosis for A2. Before implementing the timer fixes (B/D/E), we must capture actual Flutter logs or state dumps of the `LiveSessionState` during the play/pause physical actions.
-
-## 12. What documentation must be updated after every future change?
 **FUTURE ENGINEERING RULE**: Every future feature, bug fix, architectural change, protocol change, state-model change, test, or important engineering discovery MUST update the persistent engineering documentation (including `CURRENT_STATE.md`, `TEST_RESULTS.md`, `BUGS.md`, and this `HANDOFF.md`) in the same implementation task.
-
-You must leave enough information behind that another agent can read these files and immediately resume work.

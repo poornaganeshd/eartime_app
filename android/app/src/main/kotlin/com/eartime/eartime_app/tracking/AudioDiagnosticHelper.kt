@@ -11,8 +11,14 @@ import androidx.core.content.ContextCompat
 import android.util.Log
 
 object AudioDiagnosticHelper {
-    fun getDiagnostics(context: Context, onComplete: (Map<String, Any?>) -> Unit) {
+    fun getDiagnostics(context: Context, onCompleteRaw: (Map<String, Any?>) -> Unit) {
+        // MethodChannel results may be answered exactly once; guard every completion path.
+        val completed = java.util.concurrent.atomic.AtomicBoolean(false)
+        val onComplete: (Map<String, Any?>) -> Unit = { if (completed.compareAndSet(false, true)) onCompleteRaw(it) }
         val result = mutableMapOf<String, Any?>()
+        result["trackingServiceRunning"] = AudioTrackingService.engine != null
+        result["monitoringEnabled"] = TrackingPrefs(context).monitoringEnabled
+        result["journalPending"] = EventJournal.get(context).read(0L).size
         val tag = "EarTimeDiag"
         
         Log.i(tag, "[AUDIO] getAudioDiagnostics called")
@@ -48,8 +54,8 @@ object AudioDiagnosticHelper {
         result["hasFgServiceConnectedDevice"] = hasFgServiceConnectedDevice
 
         // 3. Bluetooth Adapter
-        val btManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        val adapter = btManager.adapter
+        val btManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+        val adapter = btManager?.adapter
         val adapterState = if (adapter == null) "null" else if (adapter.isEnabled) "enabled" else "disabled"
         Log.i(tag, "[BLUETOOTH] BluetoothAdapter state: $adapterState")
         result["bluetoothAdapterState"] = adapterState
@@ -91,7 +97,23 @@ object AudioDiagnosticHelper {
                     // Nothing to do
                 }
             }
-            adapter.getProfileProxy(context, profileListener, BluetoothProfile.A2DP)
+            val bound = try {
+                adapter.getProfileProxy(context, profileListener, BluetoothProfile.A2DP)
+            } catch (e: Exception) {
+                false
+            }
+            if (!bound) {
+                result["a2dpConnectedCount"] = 0
+                result["a2dpConnectedNames"] = emptyList<String>()
+                finishDiagnostics(context, result, onComplete)
+            } else {
+                // Never leave the Dart future hanging if the proxy never connects.
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    result.putIfAbsent("a2dpConnectedCount", 0)
+                    result.putIfAbsent("a2dpConnectedNames", emptyList<String>())
+                    finishDiagnostics(context, result, onComplete)
+                }, 3000)
+            }
         } else {
             result["a2dpConnectedCount"] = 0
             result["a2dpConnectedNames"] = emptyList<String>()
@@ -111,7 +133,7 @@ object AudioDiagnosticHelper {
 
         val outputDevicesList = mutableListOf<Map<String, Any?>>()
         for (device in audioDevices) {
-            val addr = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) device.address else "N/A"
+            val addr = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) device.address else "N/A"
             Log.i(tag, "[AUDIO] complete raw information for EVERY output device:")
             Log.i(tag, "[AUDIO]   type: ${device.type}")
             Log.i(tag, "[AUDIO]   productName: ${device.productName}")
