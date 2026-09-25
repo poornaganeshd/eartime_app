@@ -1,16 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../providers/data_providers.dart';
-import '../home/home_screen.dart';
-import '../timeline/timeline_screen.dart';
+import '../../providers/permission_provider.dart';
 import '../analytics/analytics_screen.dart';
 import '../devices/devices_screen.dart';
+import '../home/home_screen.dart';
+import '../permissions/permission_screen.dart';
+import '../settings/settings_screen.dart';
+import '../timeline/timeline_screen.dart';
 import '../wellbeing/wellbeing_screen.dart';
 import '../widgets/glass_navigation.dart';
-import '../settings/settings_screen.dart';
-import '../permissions/permission_screen.dart';
-import '../../core/theme/app_colors.dart';
-import '../../providers/permission_provider.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -21,74 +23,67 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> {
   int _currentIndex = 0;
+  late final AppLifecycleListener _lifecycle;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const AnalyticsScreen(),
-    const TimelineScreen(),
-    const WellbeingScreen(),
-    const DevicesScreen(),
+  static const _destinations = [
+    NavDestination(Icons.graphic_eq_outlined, Icons.graphic_eq_rounded, 'Now'),
+    NavDestination(Icons.insights_outlined, Icons.insights_rounded, 'Insights'),
+    NavDestination(Icons.history_outlined, Icons.history_rounded, 'History'),
+    NavDestination(Icons.hearing_outlined, Icons.hearing_rounded, 'Hearing'),
+    NavDestination(Icons.headphones_outlined, Icons.headphones_rounded, 'Devices'),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // Coming back to the foreground: permissions may have changed in system settings, and the
+    // engine may have journaled events while the UI was paused.
+    _lifecycle = AppLifecycleListener(onResume: _onResume);
+  }
+
+  void _onResume() {
+    unawaited(ref.read(permissionProvider.notifier).checkPermissions());
+    if (ref.read(permissionProvider) == PermissionStatusState.granted) {
+      unawaited(ref.read(trackingPlatformProvider).requestSync());
+      unawaited(ref.read(eventIngestorProvider).drain());
+    }
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
   void _openSettings() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const SettingsScreen()),
-    );
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
-    // Check permission state first
     final permissionState = ref.watch(permissionProvider);
-    
     if (permissionState != PermissionStatusState.granted) {
       return const PermissionScreen();
     }
 
-    // Wake up tracking pipeline passively ONLY if permissions are granted
+    // Wake the passive real-time pipeline only once permissions are granted.
     ref.watch(trackingPipelineProvider);
 
+    final screens = [
+      HomeScreen(onOpenSettings: _openSettings, onOpenHearing: () => setState(() => _currentIndex = 3)),
+      AnalyticsScreen(onOpenSettings: _openSettings),
+      TimelineScreen(onOpenSettings: _openSettings),
+      WellbeingScreen(onOpenSettings: _openSettings),
+      DevicesScreen(onOpenSettings: _openSettings),
+    ];
+
     return Scaffold(
-      extendBody: true, // Important for floating glass nav
-      appBar: AppBar(
-        title: const Text('EarTime', style: TextStyle(fontWeight: FontWeight.w300, letterSpacing: 2.0)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: AppColors.primary),
-            onPressed: _openSettings,
-          )
-        ],
-      ),
-      body: Stack(
-        children: [
-          // Screen Content with AnimatedSwitcher
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _screens[_currentIndex],
-          ),
-          // Floating Navigation
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: GlassNavigation(
-              currentIndex: _currentIndex,
-              onIndexChanged: (index) {
-                // If settings icon (index 4) was somehow clicked in nav (wait, we have 5 items in nav!)
-                // DevicesScreen is index 4. The icons are: grid_view, bar_chart, history, health, settings.
-                if (index == 4) {
-                  _openSettings();
-                  return;
-                }
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-            ),
-          ),
-        ],
+      extendBody: true,
+      body: IndexedStack(index: _currentIndex, children: screens),
+      bottomNavigationBar: GlassNavigation(
+        currentIndex: _currentIndex,
+        destinations: _destinations,
+        onIndexChanged: (index) => setState(() => _currentIndex = index),
       ),
     );
   }

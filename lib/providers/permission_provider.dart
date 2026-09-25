@@ -1,81 +1,65 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter/widgets.dart';
-import 'dart:io';
 
 enum PermissionStatusState {
   checking,
   granted,
   denied,
+
+  /// Denied with "don't ask again" — only the system settings screen can grant it now.
+  permanentlyDenied,
 }
 
+/// Gates the app on the one permission tracking cannot work without: BLUETOOTH_CONNECT
+/// (Android 12+; implicitly granted on older releases).
+///
+/// Notifications are requested but *optional*: without them Android still runs the foreground
+/// service, the user just doesn't see the live notification or hearing alerts. Previously a
+/// missing notification permission locked users out of the whole app.
 class PermissionNotifier extends Notifier<PermissionStatusState> {
   @override
   PermissionStatusState build() {
-    // Schedule check after the first frame is rendered to avoid blocking the engine
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      checkPermissions();
-    });
+    // Check after the first frame so the engine never blocks on a platform call during startup.
+    WidgetsBinding.instance.addPostFrameCallback((_) => checkPermissions());
     return PermissionStatusState.checking;
   }
 
+  static bool get _isAndroid => !kIsWeb && Platform.isAndroid;
+
   Future<void> checkPermissions() async {
-    if (!Platform.isAndroid) {
+    if (!_isAndroid) {
       state = PermissionStatusState.granted;
       return;
     }
-
-    final hasBluetoothConnect = await Permission.bluetoothConnect.isGranted;
-    final hasBluetooth = await Permission.bluetooth.isGranted;
-    final hasNotification = await Permission.notification.isGranted;
-    
-    // On Android 12+ (SDK 31+), bluetoothConnect is required.
-    // On Android < 12, bluetooth is required.
-    // We can just check if either is granted, or request all relevant ones.
-    // However, permission_handler handles SDK version branching internally for .isGranted.
-    // But to be safe, if we haven't asked yet, it might return denied.
-    
-    // In our simplified flow, we will consider it granted if the primary ones are granted.
-    // Actually, we should just check the status of all three. If any is denied, we show the screen.
-    // Wait, if it's Android 13+, notification is required. If Android 11, bluetooth is required.
-    // Let's do a robust check.
-    
-    bool isAllGranted = true;
-
-    // Check Notifications (Required for FGS on Android 13+)
-    if (await Permission.notification.isDenied || await Permission.notification.isPermanentlyDenied) {
-       isAllGranted = false;
-    }
-
-    // Check Bluetooth Connect (Required on Android 12+)
-    if (await Permission.bluetoothConnect.isDenied || await Permission.bluetoothConnect.isPermanentlyDenied) {
-      // Check legacy Bluetooth (Required on Android < 12)
-      if (await Permission.bluetooth.isDenied || await Permission.bluetooth.isPermanentlyDenied) {
-         isAllGranted = false;
-      }
-    }
-
-    if (isAllGranted) {
-      state = PermissionStatusState.granted;
-    } else {
+    try {
+      final status = await Permission.bluetoothConnect.status;
+      state = switch (status) {
+        PermissionStatus.granted || PermissionStatus.limited => PermissionStatusState.granted,
+        PermissionStatus.permanentlyDenied => PermissionStatusState.permanentlyDenied,
+        _ => PermissionStatusState.denied,
+      };
+    } catch (e) {
+      debugPrint('[PERMISSION] check failed: $e');
       state = PermissionStatusState.denied;
     }
   }
 
   Future<bool> requestPermissions() async {
-    if (!Platform.isAndroid) return true;
-    
-    await [
-      Permission.bluetoothConnect,
-      Permission.bluetooth,
-      Permission.notification,
-    ].request();
-
+    if (!_isAndroid) return true;
+    await [Permission.bluetoothConnect, Permission.notification].request();
     await checkPermissions();
     return state == PermissionStatusState.granted;
   }
+
+  Future<bool> get notificationsGranted async => !_isAndroid || await Permission.notification.isGranted;
+
+  Future<void> requestNotifications() async {
+    if (_isAndroid) await Permission.notification.request();
+  }
 }
 
-final permissionProvider = NotifierProvider<PermissionNotifier, PermissionStatusState>(() {
-  return PermissionNotifier();
-});
+final permissionProvider = NotifierProvider<PermissionNotifier, PermissionStatusState>(PermissionNotifier.new);

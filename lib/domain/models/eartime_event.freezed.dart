@@ -15,8 +15,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$EarTimeEvent {
 
- String get id; String get canonicalDeviceId; String get deviceName; String get connectionType; String get eventType;// DEVICE_CONNECTED, DEVICE_DISCONNECTED, PLAYBACK_STARTED, PLAYBACK_PAUSED, PLAYBACK_RESUMED, PLAYBACK_STOPPED, BLE_NOTIFICATION
- String? get playbackState; DateTime get timestamp;// Phase 5 Optional Fields
+ String get id; String get canonicalDeviceId; String get deviceName; String get connectionType; String get eventType;// DEVICE_CONNECTED, DEVICE_DISCONNECTED, PLAYBACK_STARTED, PLAYBACK_PAUSED, VOLUME_CHANGED (+ legacy PLAYBACK_RESUMED/STOPPED)
+ String? get playbackState; DateTime get timestamp;// Schema v2: volume at the time of the event (drives exposure estimates).
+ int? get volumePercent; double? get attenuationDb; String? get reason;// Phase 5 Optional Fields
  String? get earSide; Map<String, dynamic>? get earState; String? get attributionConfidence; String? get earStateSource;
 /// Create a copy of EarTimeEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -30,16 +31,16 @@ $EarTimeEventCopyWith<EarTimeEvent> get copyWith => _$EarTimeEventCopyWithImpl<E
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EarTimeEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.canonicalDeviceId, canonicalDeviceId) || other.canonicalDeviceId == canonicalDeviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.connectionType, connectionType) || other.connectionType == connectionType)&&(identical(other.eventType, eventType) || other.eventType == eventType)&&(identical(other.playbackState, playbackState) || other.playbackState == playbackState)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp)&&(identical(other.earSide, earSide) || other.earSide == earSide)&&const DeepCollectionEquality().equals(other.earState, earState)&&(identical(other.attributionConfidence, attributionConfidence) || other.attributionConfidence == attributionConfidence)&&(identical(other.earStateSource, earStateSource) || other.earStateSource == earStateSource));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EarTimeEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.canonicalDeviceId, canonicalDeviceId) || other.canonicalDeviceId == canonicalDeviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.connectionType, connectionType) || other.connectionType == connectionType)&&(identical(other.eventType, eventType) || other.eventType == eventType)&&(identical(other.playbackState, playbackState) || other.playbackState == playbackState)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp)&&(identical(other.volumePercent, volumePercent) || other.volumePercent == volumePercent)&&(identical(other.attenuationDb, attenuationDb) || other.attenuationDb == attenuationDb)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.earSide, earSide) || other.earSide == earSide)&&const DeepCollectionEquality().equals(other.earState, earState)&&(identical(other.attributionConfidence, attributionConfidence) || other.attributionConfidence == attributionConfidence)&&(identical(other.earStateSource, earStateSource) || other.earStateSource == earStateSource));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,canonicalDeviceId,deviceName,connectionType,eventType,playbackState,timestamp,earSide,const DeepCollectionEquality().hash(earState),attributionConfidence,earStateSource);
+int get hashCode => Object.hash(runtimeType,id,canonicalDeviceId,deviceName,connectionType,eventType,playbackState,timestamp,volumePercent,attenuationDb,reason,earSide,const DeepCollectionEquality().hash(earState),attributionConfidence,earStateSource);
 
 @override
 String toString() {
-  return 'EarTimeEvent(id: $id, canonicalDeviceId: $canonicalDeviceId, deviceName: $deviceName, connectionType: $connectionType, eventType: $eventType, playbackState: $playbackState, timestamp: $timestamp, earSide: $earSide, earState: $earState, attributionConfidence: $attributionConfidence, earStateSource: $earStateSource)';
+  return 'EarTimeEvent(id: $id, canonicalDeviceId: $canonicalDeviceId, deviceName: $deviceName, connectionType: $connectionType, eventType: $eventType, playbackState: $playbackState, timestamp: $timestamp, volumePercent: $volumePercent, attenuationDb: $attenuationDb, reason: $reason, earSide: $earSide, earState: $earState, attributionConfidence: $attributionConfidence, earStateSource: $earStateSource)';
 }
 
 
@@ -50,7 +51,7 @@ abstract mixin class $EarTimeEventCopyWith<$Res>  {
   factory $EarTimeEventCopyWith(EarTimeEvent value, $Res Function(EarTimeEvent) _then) = _$EarTimeEventCopyWithImpl;
 @useResult
 $Res call({
- String id, String canonicalDeviceId, String deviceName, String connectionType, String eventType, String? playbackState, DateTime timestamp, String? earSide, Map<String, dynamic>? earState, String? attributionConfidence, String? earStateSource
+ String id, String canonicalDeviceId, String deviceName, String connectionType, String eventType, String? playbackState, DateTime timestamp, int? volumePercent, double? attenuationDb, String? reason, String? earSide, Map<String, dynamic>? earState, String? attributionConfidence, String? earStateSource
 });
 
 
@@ -67,7 +68,7 @@ class _$EarTimeEventCopyWithImpl<$Res>
 
 /// Create a copy of EarTimeEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? canonicalDeviceId = null,Object? deviceName = null,Object? connectionType = null,Object? eventType = null,Object? playbackState = freezed,Object? timestamp = null,Object? earSide = freezed,Object? earState = freezed,Object? attributionConfidence = freezed,Object? earStateSource = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? canonicalDeviceId = null,Object? deviceName = null,Object? connectionType = null,Object? eventType = null,Object? playbackState = freezed,Object? timestamp = null,Object? volumePercent = freezed,Object? attenuationDb = freezed,Object? reason = freezed,Object? earSide = freezed,Object? earState = freezed,Object? attributionConfidence = freezed,Object? earStateSource = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,canonicalDeviceId: null == canonicalDeviceId ? _self.canonicalDeviceId : canonicalDeviceId // ignore: cast_nullable_to_non_nullable
@@ -76,7 +77,10 @@ as String,connectionType: null == connectionType ? _self.connectionType : connec
 as String,eventType: null == eventType ? _self.eventType : eventType // ignore: cast_nullable_to_non_nullable
 as String,playbackState: freezed == playbackState ? _self.playbackState : playbackState // ignore: cast_nullable_to_non_nullable
 as String?,timestamp: null == timestamp ? _self.timestamp : timestamp // ignore: cast_nullable_to_non_nullable
-as DateTime,earSide: freezed == earSide ? _self.earSide : earSide // ignore: cast_nullable_to_non_nullable
+as DateTime,volumePercent: freezed == volumePercent ? _self.volumePercent : volumePercent // ignore: cast_nullable_to_non_nullable
+as int?,attenuationDb: freezed == attenuationDb ? _self.attenuationDb : attenuationDb // ignore: cast_nullable_to_non_nullable
+as double?,reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
+as String?,earSide: freezed == earSide ? _self.earSide : earSide // ignore: cast_nullable_to_non_nullable
 as String?,earState: freezed == earState ? _self.earState : earState // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>?,attributionConfidence: freezed == attributionConfidence ? _self.attributionConfidence : attributionConfidence // ignore: cast_nullable_to_non_nullable
 as String?,earStateSource: freezed == earStateSource ? _self.earStateSource : earStateSource // ignore: cast_nullable_to_non_nullable
@@ -162,10 +166,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String canonicalDeviceId,  String deviceName,  String connectionType,  String eventType,  String? playbackState,  DateTime timestamp,  String? earSide,  Map<String, dynamic>? earState,  String? attributionConfidence,  String? earStateSource)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String canonicalDeviceId,  String deviceName,  String connectionType,  String eventType,  String? playbackState,  DateTime timestamp,  int? volumePercent,  double? attenuationDb,  String? reason,  String? earSide,  Map<String, dynamic>? earState,  String? attributionConfidence,  String? earStateSource)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _EarTimeEvent() when $default != null:
-return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectionType,_that.eventType,_that.playbackState,_that.timestamp,_that.earSide,_that.earState,_that.attributionConfidence,_that.earStateSource);case _:
+return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectionType,_that.eventType,_that.playbackState,_that.timestamp,_that.volumePercent,_that.attenuationDb,_that.reason,_that.earSide,_that.earState,_that.attributionConfidence,_that.earStateSource);case _:
   return orElse();
 
 }
@@ -183,10 +187,10 @@ return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connecti
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String canonicalDeviceId,  String deviceName,  String connectionType,  String eventType,  String? playbackState,  DateTime timestamp,  String? earSide,  Map<String, dynamic>? earState,  String? attributionConfidence,  String? earStateSource)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String canonicalDeviceId,  String deviceName,  String connectionType,  String eventType,  String? playbackState,  DateTime timestamp,  int? volumePercent,  double? attenuationDb,  String? reason,  String? earSide,  Map<String, dynamic>? earState,  String? attributionConfidence,  String? earStateSource)  $default,) {final _that = this;
 switch (_that) {
 case _EarTimeEvent():
-return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectionType,_that.eventType,_that.playbackState,_that.timestamp,_that.earSide,_that.earState,_that.attributionConfidence,_that.earStateSource);}
+return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectionType,_that.eventType,_that.playbackState,_that.timestamp,_that.volumePercent,_that.attenuationDb,_that.reason,_that.earSide,_that.earState,_that.attributionConfidence,_that.earStateSource);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -200,10 +204,10 @@ return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connecti
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String canonicalDeviceId,  String deviceName,  String connectionType,  String eventType,  String? playbackState,  DateTime timestamp,  String? earSide,  Map<String, dynamic>? earState,  String? attributionConfidence,  String? earStateSource)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String canonicalDeviceId,  String deviceName,  String connectionType,  String eventType,  String? playbackState,  DateTime timestamp,  int? volumePercent,  double? attenuationDb,  String? reason,  String? earSide,  Map<String, dynamic>? earState,  String? attributionConfidence,  String? earStateSource)?  $default,) {final _that = this;
 switch (_that) {
 case _EarTimeEvent() when $default != null:
-return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectionType,_that.eventType,_that.playbackState,_that.timestamp,_that.earSide,_that.earState,_that.attributionConfidence,_that.earStateSource);case _:
+return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connectionType,_that.eventType,_that.playbackState,_that.timestamp,_that.volumePercent,_that.attenuationDb,_that.reason,_that.earSide,_that.earState,_that.attributionConfidence,_that.earStateSource);case _:
   return null;
 
 }
@@ -215,7 +219,7 @@ return $default(_that.id,_that.canonicalDeviceId,_that.deviceName,_that.connecti
 @JsonSerializable()
 
 class _EarTimeEvent implements EarTimeEvent {
-  const _EarTimeEvent({required this.id, required this.canonicalDeviceId, this.deviceName = 'Unknown Device', this.connectionType = 'bluetooth', required this.eventType, this.playbackState, required this.timestamp, this.earSide, final  Map<String, dynamic>? earState, this.attributionConfidence, this.earStateSource}): _earState = earState;
+  const _EarTimeEvent({required this.id, required this.canonicalDeviceId, this.deviceName = 'Unknown Device', this.connectionType = 'bluetooth', required this.eventType, this.playbackState, required this.timestamp, this.volumePercent, this.attenuationDb, this.reason, this.earSide, final  Map<String, dynamic>? earState, this.attributionConfidence, this.earStateSource}): _earState = earState;
   factory _EarTimeEvent.fromJson(Map<String, dynamic> json) => _$EarTimeEventFromJson(json);
 
 @override final  String id;
@@ -223,9 +227,13 @@ class _EarTimeEvent implements EarTimeEvent {
 @override@JsonKey() final  String deviceName;
 @override@JsonKey() final  String connectionType;
 @override final  String eventType;
-// DEVICE_CONNECTED, DEVICE_DISCONNECTED, PLAYBACK_STARTED, PLAYBACK_PAUSED, PLAYBACK_RESUMED, PLAYBACK_STOPPED, BLE_NOTIFICATION
+// DEVICE_CONNECTED, DEVICE_DISCONNECTED, PLAYBACK_STARTED, PLAYBACK_PAUSED, VOLUME_CHANGED (+ legacy PLAYBACK_RESUMED/STOPPED)
 @override final  String? playbackState;
 @override final  DateTime timestamp;
+// Schema v2: volume at the time of the event (drives exposure estimates).
+@override final  int? volumePercent;
+@override final  double? attenuationDb;
+@override final  String? reason;
 // Phase 5 Optional Fields
 @override final  String? earSide;
  final  Map<String, dynamic>? _earState;
@@ -253,16 +261,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EarTimeEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.canonicalDeviceId, canonicalDeviceId) || other.canonicalDeviceId == canonicalDeviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.connectionType, connectionType) || other.connectionType == connectionType)&&(identical(other.eventType, eventType) || other.eventType == eventType)&&(identical(other.playbackState, playbackState) || other.playbackState == playbackState)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp)&&(identical(other.earSide, earSide) || other.earSide == earSide)&&const DeepCollectionEquality().equals(other._earState, _earState)&&(identical(other.attributionConfidence, attributionConfidence) || other.attributionConfidence == attributionConfidence)&&(identical(other.earStateSource, earStateSource) || other.earStateSource == earStateSource));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EarTimeEvent&&(identical(other.id, id) || other.id == id)&&(identical(other.canonicalDeviceId, canonicalDeviceId) || other.canonicalDeviceId == canonicalDeviceId)&&(identical(other.deviceName, deviceName) || other.deviceName == deviceName)&&(identical(other.connectionType, connectionType) || other.connectionType == connectionType)&&(identical(other.eventType, eventType) || other.eventType == eventType)&&(identical(other.playbackState, playbackState) || other.playbackState == playbackState)&&(identical(other.timestamp, timestamp) || other.timestamp == timestamp)&&(identical(other.volumePercent, volumePercent) || other.volumePercent == volumePercent)&&(identical(other.attenuationDb, attenuationDb) || other.attenuationDb == attenuationDb)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.earSide, earSide) || other.earSide == earSide)&&const DeepCollectionEquality().equals(other._earState, _earState)&&(identical(other.attributionConfidence, attributionConfidence) || other.attributionConfidence == attributionConfidence)&&(identical(other.earStateSource, earStateSource) || other.earStateSource == earStateSource));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,canonicalDeviceId,deviceName,connectionType,eventType,playbackState,timestamp,earSide,const DeepCollectionEquality().hash(_earState),attributionConfidence,earStateSource);
+int get hashCode => Object.hash(runtimeType,id,canonicalDeviceId,deviceName,connectionType,eventType,playbackState,timestamp,volumePercent,attenuationDb,reason,earSide,const DeepCollectionEquality().hash(_earState),attributionConfidence,earStateSource);
 
 @override
 String toString() {
-  return 'EarTimeEvent(id: $id, canonicalDeviceId: $canonicalDeviceId, deviceName: $deviceName, connectionType: $connectionType, eventType: $eventType, playbackState: $playbackState, timestamp: $timestamp, earSide: $earSide, earState: $earState, attributionConfidence: $attributionConfidence, earStateSource: $earStateSource)';
+  return 'EarTimeEvent(id: $id, canonicalDeviceId: $canonicalDeviceId, deviceName: $deviceName, connectionType: $connectionType, eventType: $eventType, playbackState: $playbackState, timestamp: $timestamp, volumePercent: $volumePercent, attenuationDb: $attenuationDb, reason: $reason, earSide: $earSide, earState: $earState, attributionConfidence: $attributionConfidence, earStateSource: $earStateSource)';
 }
 
 
@@ -273,7 +281,7 @@ abstract mixin class _$EarTimeEventCopyWith<$Res> implements $EarTimeEventCopyWi
   factory _$EarTimeEventCopyWith(_EarTimeEvent value, $Res Function(_EarTimeEvent) _then) = __$EarTimeEventCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String canonicalDeviceId, String deviceName, String connectionType, String eventType, String? playbackState, DateTime timestamp, String? earSide, Map<String, dynamic>? earState, String? attributionConfidence, String? earStateSource
+ String id, String canonicalDeviceId, String deviceName, String connectionType, String eventType, String? playbackState, DateTime timestamp, int? volumePercent, double? attenuationDb, String? reason, String? earSide, Map<String, dynamic>? earState, String? attributionConfidence, String? earStateSource
 });
 
 
@@ -290,7 +298,7 @@ class __$EarTimeEventCopyWithImpl<$Res>
 
 /// Create a copy of EarTimeEvent
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? canonicalDeviceId = null,Object? deviceName = null,Object? connectionType = null,Object? eventType = null,Object? playbackState = freezed,Object? timestamp = null,Object? earSide = freezed,Object? earState = freezed,Object? attributionConfidence = freezed,Object? earStateSource = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? canonicalDeviceId = null,Object? deviceName = null,Object? connectionType = null,Object? eventType = null,Object? playbackState = freezed,Object? timestamp = null,Object? volumePercent = freezed,Object? attenuationDb = freezed,Object? reason = freezed,Object? earSide = freezed,Object? earState = freezed,Object? attributionConfidence = freezed,Object? earStateSource = freezed,}) {
   return _then(_EarTimeEvent(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,canonicalDeviceId: null == canonicalDeviceId ? _self.canonicalDeviceId : canonicalDeviceId // ignore: cast_nullable_to_non_nullable
@@ -299,7 +307,10 @@ as String,connectionType: null == connectionType ? _self.connectionType : connec
 as String,eventType: null == eventType ? _self.eventType : eventType // ignore: cast_nullable_to_non_nullable
 as String,playbackState: freezed == playbackState ? _self.playbackState : playbackState // ignore: cast_nullable_to_non_nullable
 as String?,timestamp: null == timestamp ? _self.timestamp : timestamp // ignore: cast_nullable_to_non_nullable
-as DateTime,earSide: freezed == earSide ? _self.earSide : earSide // ignore: cast_nullable_to_non_nullable
+as DateTime,volumePercent: freezed == volumePercent ? _self.volumePercent : volumePercent // ignore: cast_nullable_to_non_nullable
+as int?,attenuationDb: freezed == attenuationDb ? _self.attenuationDb : attenuationDb // ignore: cast_nullable_to_non_nullable
+as double?,reason: freezed == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
+as String?,earSide: freezed == earSide ? _self.earSide : earSide // ignore: cast_nullable_to_non_nullable
 as String?,earState: freezed == earState ? _self._earState : earState // ignore: cast_nullable_to_non_nullable
 as Map<String, dynamic>?,attributionConfidence: freezed == attributionConfidence ? _self.attributionConfidence : attributionConfidence // ignore: cast_nullable_to_non_nullable
 as String?,earStateSource: freezed == earStateSource ? _self.earStateSource : earStateSource // ignore: cast_nullable_to_non_nullable

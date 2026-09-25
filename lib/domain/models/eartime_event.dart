@@ -10,9 +10,13 @@ sealed class EarTimeEvent with _$EarTimeEvent {
     required String canonicalDeviceId,
     @Default('Unknown Device') String deviceName,
     @Default('bluetooth') String connectionType,
-    required String eventType, // DEVICE_CONNECTED, DEVICE_DISCONNECTED, PLAYBACK_STARTED, PLAYBACK_PAUSED, PLAYBACK_RESUMED, PLAYBACK_STOPPED, BLE_NOTIFICATION
+    required String eventType, // DEVICE_CONNECTED, DEVICE_DISCONNECTED, PLAYBACK_STARTED, PLAYBACK_PAUSED, VOLUME_CHANGED (+ legacy PLAYBACK_RESUMED/STOPPED)
     String? playbackState,
     required DateTime timestamp,
+    // Schema v2: volume at the time of the event (drives exposure estimates).
+    int? volumePercent,
+    double? attenuationDb,
+    String? reason,
     // Phase 5 Optional Fields
     String? earSide,
     Map<String, dynamic>? earState,

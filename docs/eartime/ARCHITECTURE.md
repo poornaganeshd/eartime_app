@@ -1,21 +1,47 @@
 # Architecture
 
-## Dual-Layer System
-EarTime relies on a persistent native background layer and a Flutter UI layer.
+## Layers
 
-### 1. Native Android (`AudioTrackingService`)
-- A foreground service ensuring EarTime is never killed. (Requires Android 12+ `startForeground` enforcement to prevent `ForegroundServiceDidNotStartInTimeException` upon app reopening).
-- Uses `AudioManager` and `AudioDeviceCallback` to monitor when the earbuds connect or disconnect (robustly filtering out transient SCO routes).
-- Monitors `AudioPlaybackCallback` to track music play/pause states.
-- Identifies devices using `AudioDeviceInfo` and maps them to Bluetooth MACs using the `BluetoothA2dp` proxy.
-- Broadcasts real-time events over a Flutter `EventChannel` (`TrackingEventBroker`).
-- **BLE Diagnostic Pipeline**: Runs `BleDiscoveryManager` to perform GATT connections and stream raw BLE notifications (OPOv1 packets).
+### 1. Native Android — real-time engine
+- **`AudioTrackingService`** (foreground service, type `connectedDevice`) hosts a dedicated
+  `HandlerThread` ("EarTimeEngine"). `startForeground` runs on every `onStartCommand`.
+- **`TrackingEngine`** owns *all* mutable tracking state on that one thread:
+  - *Devices*: `AudioDeviceCallback` (registered with the engine handler). Each logical headset keeps
+    a set of route ids; it disconnects only when the set is empty for 1.5 s.
+  - *Playback*: `AudioPlaybackCallback` schedules an evaluation 350 ms and 2 s later; the evaluation
+    uses `AudioManager.isMusicActive()` and the media route (`getAudioDevicesForAttributes`, API 33+).
+    A 5 s tick (30 s when idle-but-connected) reconciles missed transitions and accounts exposure.
+  - *Volume*: Settings ContentObserver + `VOLUME_CHANGED_ACTION` receiver → `ExposureMath.sampleVolume`.
+  - *Durability*: every transition → `EventJournal` → broker. Heartbeat saved to `TrackingPrefs`;
+    on start, state from a dead process is reconciled (resume if < 2 min gap and still true,
+    otherwise close at the last heartbeat with reason `RECOVERED`).
+  - *Alerts & notification*: `AlertManager` (live FGS notification, hearing alerts).
+- **`BootReceiver`** restarts monitoring after reboot / update if enabled.
 
-### 2. Flutter UI Layer
-- **Live Session State**: `LiveSessionNotifier` acts as the *single source of truth* for the current live session. It listens to the `EventChannel` and updates memory immediately, avoiding database latency or persistence mismatches.
-- **Database (Drift)**: The `trackingPipelineProvider` simultaneously inserts tracking events into a local SQLite DB for historical analysis and the Timeline view.
-- **State Management**: `flutter_riverpod` provides reactive updates to the UI, particularly `LiveTimerWidget` and `HomeScreen`.
+### 2. Bridge
+- `TrackingEventBroker` (main-thread delivery, bounded 200-event buffer while detached).
+- `MainActivity` method channel (see contract).
 
-## Event Architecture
-All events flow one way:
-`Android OS` → `AudioTrackingService` → `TrackingEventBroker (EventChannel)` → `trackingPipelineProvider (Dart)` → `LiveSessionNotifier` / `Drift Database`.
+### 3. Flutter
+- **Live state**: `LiveSessionNotifier` applies `LiveSessionReducer` to the shared event stream.
+- **History**: `EventIngestor` drains the journal into Drift (`INSERT OR IGNORE`).
+- **Derived data** (pure functions, recomputed reactively):
+  `eventsProvider(range)` → `SessionManager.reconstruct` (intervals split at volume changes; open
+  intervals only stay open for the live device) → `ListeningAnalyzer.compute` (totals, buckets,
+  time-of-day, devices, breaks, dose, Leq, peak) → `hearingInsightProvider` (score + advice).
+- **Clock**: `clockProvider` ticks 1 s while playing, 30 s otherwise.
+- **Settings**: `SettingsNotifier` persists to the `app_settings` table and mirrors hearing values
+  to native (`updateSettings`).
+
+## Event flow
+```
+OS callbacks → TrackingEngine → EventJournal ─┬─► (drain) EventIngestor → SQLite → sessions → stats → UI
+                                              └─► Broker → EventChannel → LiveSessionReducer → live UI
+```
+
+## UI system
+- `EarPalette` ThemeExtension (dark + light tokens); status colours validated for colour-blind
+  separation and always paired with a text label.
+- Shared components: `TabPage`, `LiquidGlassSurface` (blur opt-in for performance), `ProgressRing`,
+  `LevelGauge`, `ColumnChart` (tap/drag inspect, semantics summary), `AllowanceMeter`,
+  `StatusIndicator`, `EditorialMetric`, `GlassNavigation`.

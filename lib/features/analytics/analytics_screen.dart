@@ -1,260 +1,240 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/format.dart';
 import '../../core/theme/app_colors.dart';
+import '../../domain/logic/listening_analyzer.dart';
 import '../../providers/data_providers.dart';
+import '../home/home_screen.dart' show deviceIcon;
+import '../widgets/charts.dart';
 import '../widgets/data_visualization_bar.dart';
 import '../widgets/editorial_metric.dart';
 import '../widgets/liquid_glass_surface.dart';
+import '../widgets/section_header.dart';
+import '../widgets/tab_page.dart';
 
 class AnalyticsScreen extends ConsumerStatefulWidget {
-  const AnalyticsScreen({super.key});
+  final VoidCallback? onOpenSettings;
+
+  const AnalyticsScreen({super.key, this.onOpenSettings});
 
   @override
   ConsumerState<AnalyticsScreen> createState() => _AnalyticsScreenState();
 }
 
 class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
-  int _selectedTab = 0; // 0: Today, 1: Week, 2: Month, 3: Year
+  StatsRange _range = StatsRange.week;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final analyticsDataAsync = ref.watch(analyticsDataProvider);
+    final statsAsync = ref.watch(statsProvider(_range));
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Ambient Orbs
-          Positioned(
-            top: -50,
-            right: -50,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary.withValues(alpha: 0.1),
-                boxShadow: [
-                  BoxShadow(color: AppColors.primary.withValues(alpha: 0.1), blurRadius: 100, spreadRadius: 30),
-                ],
-              ),
-            ),
-          ),
-          
-          SafeArea(
-            bottom: false,
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 32),
-                        Text(
-                          'YOUR INSIGHTS',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Analytics',
-                          style: theme.textTheme.displayMedium?.copyWith(
-                            color: AppColors.editorialWhite,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Time Range Selector
-                        LiquidGlassSurface(
-                          padding: const EdgeInsets.all(8),
-                          borderRadius: 100,
-                          child: Row(
-                            children: [
-                              _buildTabItem(0, 'TODAY'),
-                              _buildTabItem(1, 'WEEK'),
-                              _buildTabItem(2, 'MONTH'),
-                              _buildTabItem(3, 'YEAR'),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
-                        analyticsDataAsync.when(
-                          data: (analyticsData) {
-                            if (analyticsData == null) {
-                              return LiquidGlassSurface(
-                                padding: const EdgeInsets.all(32),
-                                child: Center(
-                                  child: Text(
-                                    'Not enough data yet',
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: AppColors.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }
-
-                            // Calculate percentages for UI
-                            // For simplicity, we fallback to 0 if total time is zero
-                            double getPct(Duration duration) {
-                              if (analyticsData.totalListenTime == Duration.zero) return 0;
-                              return duration.inMinutes / analyticsData.totalListenTime.inMinutes;
-                            }
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Main Chart Area
-                                LiquidGlassSurface(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'LISTENING CONSISTENCY',
-                                        style: theme.textTheme.labelMedium?.copyWith(
-                                          color: AppColors.onSurfaceVariant,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 24),
-                                      DataVisualizationBar(
-                                        percentage: getPct(analyticsData.timeOfDayUsage.morning), 
-                                        label: 'Morning', 
-                                        valueText: '${analyticsData.timeOfDayUsage.morning.inHours}H ${analyticsData.timeOfDayUsage.morning.inMinutes % 60}M'
-                                      ),
-                                      const SizedBox(height: 16),
-                                      DataVisualizationBar(
-                                        percentage: getPct(analyticsData.timeOfDayUsage.afternoon), 
-                                        label: 'Afternoon', 
-                                        valueText: '${analyticsData.timeOfDayUsage.afternoon.inHours}H ${analyticsData.timeOfDayUsage.afternoon.inMinutes % 60}M'
-                                      ),
-                                      const SizedBox(height: 16),
-                                      DataVisualizationBar(
-                                        percentage: getPct(analyticsData.timeOfDayUsage.evening), 
-                                        label: 'Evening', 
-                                        valueText: '${analyticsData.timeOfDayUsage.evening.inHours}H ${analyticsData.timeOfDayUsage.evening.inMinutes % 60}M'
-                                      ),
-                                      const SizedBox(height: 16),
-                                      DataVisualizationBar(
-                                        percentage: getPct(analyticsData.timeOfDayUsage.night), 
-                                        label: 'Night', 
-                                        valueText: '${analyticsData.timeOfDayUsage.night.inHours}H ${analyticsData.timeOfDayUsage.night.inMinutes % 60}M'
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-
-                                // Stats Row
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: LiquidGlassSurface(
-                                        padding: const EdgeInsets.all(24),
-                                        child: EditorialMetric(label: 'Avg Session', value: analyticsData.averageSession.inMinutes.toString(), unit: 'MIN'),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: LiquidGlassSurface(
-                                        padding: const EdgeInsets.all(24),
-                                        child: EditorialMetric(label: 'Longest', value: analyticsData.longestSession.inHours.toString(), unit: 'HRS'),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 24),
-
-                                // Device Usage
-                                if (analyticsData.deviceUsagePercentages.isNotEmpty)
-                                  LiquidGlassSurface(
-                                    padding: const EdgeInsets.all(24),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'DEVICE USAGE',
-                                          style: theme.textTheme.labelMedium?.copyWith(
-                                            color: AppColors.onSurfaceVariant,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 24),
-                                        ...analyticsData.deviceUsagePercentages.entries.map((entry) {
-                                          return Padding(
-                                            padding: const EdgeInsets.only(bottom: 16.0),
-                                            child: DataVisualizationBar(
-                                              percentage: entry.value, 
-                                              label: entry.key, 
-                                              valueText: '${(entry.value * 100).toInt()}%', 
-                                              color: AppColors.secondary
-                                            ),
-                                          );
-                                        }),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            );
-                          },
-                          loading: () => const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(32.0),
-                              child: Text('Loading analytics...', style: TextStyle(color: AppColors.onSurfaceVariant)),
-                            ),
-                          ),
-                          error: (error, stackTrace) => const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(32.0),
-                              child: Text('Error loading analytics', style: TextStyle(color: AppColors.error)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 120)), // Space for bottom nav
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabItem(int index, String title) {
-    final isSelected = _selectedTab == index;
-    final theme = Theme.of(context);
-    
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedTab = index;
-          });
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.editorialWhite.withValues(alpha: 0.1) : Colors.transparent,
-            borderRadius: BorderRadius.circular(100),
-          ),
-          child: Center(
-            child: Text(
-              title,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: isSelected ? AppColors.editorialWhite : AppColors.onSurfaceVariant,
+    return TabPage(
+      onOpenSettings: widget.onOpenSettings,
+      orbA: const Alignment(1.2, -1.0),
+      orbB: const Alignment(-1.2, 0.4),
+      slivers: [
+        const SliverToBoxAdapter(child: ScreenTitle(eyebrow: 'Your listening', title: 'Insights')),
+        SliverToBoxAdapter(
+          child: Gap(
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<StatsRange>(
+                showSelectedIcon: false,
+                segments: [for (final r in StatsRange.values) ButtonSegment(value: r, label: Text(r.label))],
+                selected: {_range},
+                onSelectionChanged: (s) => setState(() => _range = s.first),
               ),
             ),
           ),
         ),
-      ),
+        statsAsync.when(
+          data: (stats) => SliverList.list(children: _content(context, stats)),
+          loading: () => const SliverToBoxAdapter(
+            child: Padding(padding: EdgeInsets.all(48), child: Center(child: CircularProgressIndicator())),
+          ),
+          error: (e, _) => SliverToBoxAdapter(child: Text('Could not load insights: $e')),
+        ),
+      ],
     );
+  }
+
+  List<Widget> _content(BuildContext context, ListeningStats stats) {
+    final theme = Theme.of(context);
+    final p = context.palette;
+    final days = stats.to.difference(stats.from).inHours / 24;
+    final dailyAverage = _range == StatsRange.today || days <= 0
+        ? stats.total
+        : Duration(seconds: (stats.total.inSeconds / days.clamp(1, 366)).round());
+
+    String bucketLabel(int i) {
+      final start = stats.bucketStarts[i];
+      return switch (_range) {
+        StatsRange.today => '${start.hour}',
+        StatsRange.week => Fmt.weekday(start).substring(0, 1),
+        StatsRange.month => '${start.day}',
+        StatsRange.year => Fmt.month(start).substring(0, 1),
+      };
+    }
+
+    String bucketTooltip(int i) {
+      final start = stats.bucketStarts[i];
+      final when = switch (_range) {
+        StatsRange.today => '${Fmt.two(start.hour)}:00–${Fmt.two((start.hour + 1) % 24)}:00',
+        StatsRange.week || StatsRange.month => Fmt.day(start),
+        StatsRange.year => '${Fmt.month(start)} ${start.year}',
+      };
+      return '$when · ${Fmt.duration(stats.buckets[i])}';
+    }
+
+    final nowIndex = stats.bucketStarts.lastIndexWhere((b) => !b.isAfter(stats.to));
+
+    return [
+      Gap(
+        LiquidGlassSurface(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: EditorialMetric(
+                      label: _range == StatsRange.today ? 'Listened today' : 'Total listening',
+                      value: Fmt.duration(stats.total),
+                    ),
+                  ),
+                  if (_range != StatsRange.today)
+                    EditorialMetric(
+                      label: 'Daily average',
+                      value: Fmt.duration(dailyAverage),
+                      alignment: CrossAxisAlignment.end,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              ColumnChart(
+                values: [for (final b in stats.buckets) b.inSeconds.toDouble()],
+                labels: [for (var i = 0; i < stats.buckets.length; i++) bucketLabel(i)],
+                tooltips: [for (var i = 0; i < stats.buckets.length; i++) bucketTooltip(i)],
+                highlightIndex: nowIndex < 0 ? null : nowIndex,
+                showLabel: switch (_range) {
+                  StatsRange.today => (i) => i % 6 == 0,
+                  StatsRange.month => (i) => i % 5 == 0,
+                  _ => null,
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      Gap(
+        Row(
+          children: [
+            Expanded(
+              child: LiquidGlassSurface(
+                padding: const EdgeInsets.all(16),
+                child: EditorialMetric(label: 'Sessions', value: '${stats.sessionCount}'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: LiquidGlassSurface(
+                padding: const EdgeInsets.all(16),
+                child: EditorialMetric(label: 'Average', value: Fmt.duration(stats.averageSession)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: LiquidGlassSurface(
+                padding: const EdgeInsets.all(16),
+                child: EditorialMetric(label: 'Longest', value: Fmt.duration(stats.longestContinuous)),
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SectionHeader(title: 'Time of day'),
+      Gap(
+        LiquidGlassSurface(
+          child: Column(
+            children: [
+              for (final slot in DaySlot.values) ...[
+                DataVisualizationBar(
+                  percentage: stats.total.inSeconds == 0 ? 0 : stats.timeOfDay[slot]!.inSeconds / stats.total.inSeconds,
+                  label: slot.label,
+                  caption: slot.hours,
+                  valueText: Fmt.duration(stats.timeOfDay[slot]!),
+                ),
+                if (slot != DaySlot.values.last) const SizedBox(height: 16),
+              ],
+            ],
+          ),
+        ),
+      ),
+      const SectionHeader(title: 'Sound exposure'),
+      Gap(
+        LiquidGlassSurface(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: EditorialMetric(
+                      label: 'Avg level',
+                      value: stats.averageDb == null ? '--' : '${stats.averageDb!.round()}',
+                      unit: stats.averageDb == null ? null : 'dB',
+                    ),
+                  ),
+                  Expanded(
+                    child: EditorialMetric(
+                      label: 'Peak',
+                      value: stats.peakDb == null ? '--' : '${stats.peakDb!.round()}',
+                      unit: stats.peakDb == null ? null : 'dB',
+                    ),
+                  ),
+                  Expanded(child: EditorialMetric(label: 'Above 80 dB', value: Fmt.duration(stats.loudTime))),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Dose used in this period: ${Fmt.percent(stats.dose)} of one week\'s WHO allowance.'
+                '${stats.unknownLevelTime > Duration.zero ? ' ${Fmt.duration(stats.unknownLevelTime)} was recorded before volume tracking and is excluded.' : ''}',
+                style: theme.textTheme.bodySmall?.copyWith(color: p.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      ),
+      const SectionHeader(title: 'Devices'),
+      if (stats.devices.isEmpty)
+        const EmptyState(icon: Icons.headphones_rounded, title: 'No devices used', message: 'Nothing was played in this period.')
+      else
+        Gap(
+          LiquidGlassSurface(
+            child: Column(
+              children: [
+                for (final d in stats.devices) ...[
+                  Row(
+                    children: [
+                      Icon(deviceIcon(d.connectionType), size: 18, color: p.textSecondary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DataVisualizationBar(
+                          percentage: stats.total.inSeconds == 0 ? 0 : d.listening.inSeconds / stats.total.inSeconds,
+                          label: d.name,
+                          valueText: '${Fmt.duration(d.listening)} · ${Fmt.percent(stats.total.inSeconds == 0 ? 0 : d.listening.inSeconds / stats.total.inSeconds)}',
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (d != stats.devices.last) const SizedBox(height: 16),
+                ],
+              ],
+            ),
+          ),
+        ),
+    ];
   }
 }

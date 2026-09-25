@@ -16,9 +16,9 @@ class BleDiscoveryManager(private val context: Context) {
         private const val TAG = "BleDiscoveryManager"
     }
 
-    private var currentGatt: BluetoothGatt? = null
-    private var isConnecting = false
-    private var isConnected = false
+    @Volatile private var currentGatt: BluetoothGatt? = null
+    @Volatile private var isConnecting = false
+    @Volatile private var isConnected = false
 
     @SuppressLint("MissingPermission")
     fun discover(device: BluetoothDevice, forceRefresh: Boolean = false) {
@@ -257,5 +257,19 @@ class BleDiscoveryManager(private val context: Context) {
     @SuppressLint("MissingPermission")
     fun disconnect() {
         currentGatt?.disconnect()
+    }
+
+    /** Releases the GATT client; must be called when the tracking service stops. */
+    @SuppressLint("MissingPermission")
+    fun close() {
+        try {
+            currentGatt?.disconnect()
+            currentGatt?.close()
+        } catch (e: Exception) {
+            Log.w(TAG, "[BLE_DISCOVERY] close failed: ${e.message}")
+        }
+        currentGatt = null
+        isConnecting = false
+        isConnected = false
     }
 }
